@@ -1,30 +1,50 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from .serializers import PostSerializer
-from .models import Post
-from .serializers import GroupSerializer
-from .models import Group
-from .serializers import CommentSerializer
-from .models import Comment
+from posts.models import Post, Group, Comment
+from .serializers import PostSerializer, GroupSerializer, CommentSerializer
 
 
 class PostViewSet(ModelViewSet):
-    serializer_class = PostSerializer
     queryset = Post.objects.all()
+    serializer_class = PostSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
+    def perform_update(self, serializer):
+        if serializer.instance.author != self.request.user:
+            raise PermissionDenied('Изменение чужого контента запрещено!')
+        super().perform_update(serializer)
+
+    def perform_destroy(self, instance):
+        if instance.author != self.request.user:
+            raise PermissionDenied('Удаление чужого контента запрещено!')
+        super().perform_destroy(instance)
+
 
 class GroupViewSet(ModelViewSet):
-    serializer_class = GroupSerializer
     queryset = Group.objects.all()
+    serializer_class = GroupSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 
 class CommentViewSet(ModelViewSet):
+    queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
-    def get_queryset(self):
+    def perform_create(self, serializer):
         post_id = self.kwargs.get('post_id')
-        return Comment.objects.filter(post_id=post_id)
+        post = get_object_or_404(Post, id=post_id)
+        serializer.save(author=self.request.user, post=post)
+
+    def perform_update(self, serializer):
+        if serializer.instance.author != self.request.user:
+            raise PermissionDenied('Изменение чужого контента запрещено!')
+        super().perform_update(serializer)
+
+    def perform_destroy(self, instance):
+        if instance.author != self.request.user:
+            raise PermissionDenied('Удаление чужого контента запрещено!')
+        super().perform_destroy(instance)
