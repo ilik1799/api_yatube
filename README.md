@@ -1,6 +1,3 @@
-# api_yatube
-api_yatube
-
 # API Yatube
 API Yatube - это проект, основанный на Django REST Framework, который предоставляет API для публикации и обмена сообщениями в блоге.
 
